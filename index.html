@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>합주문 BO 와이어프레임 v7.3 — 실제 어드민 정보구조 반영</title>
+<style>
+  :root{
+    --blue:#2563eb; --blue-soft:#dbeafe;
+    --red:#dc2626; --red-soft:#fee2e2;
+    --green:#059669; --orange:#f97316; --orange-soft:#fff7ed;
+    --purple:#7c3aed; --purple-soft:#ede9fe;
+    --amber:#d97706; --amber-soft:#fef3c7;
+    --ink:#1f2937; --gray-1:#f9fafb; --gray-2:#f3f4f6; --gray-3:#e5e7eb;
+    --gray-4:#d1d5db; --gray-5:#9ca3af; --gray-6:#6b7280; --gray-7:#4b5563;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+    background:#f0f2f5;color:var(--ink);font-size:12px;line-height:1.5;padding:20px;
+  }
+  .wrap{max-width:1180px;margin:0 auto}
+
+  .intro{background:linear-gradient(135deg,#1e3a8a,#3730a3);color:#fff;padding:20px 24px;border-radius:8px;margin-bottom:18px}
+  .intro h1{font-size:20px;font-weight:700;margin-bottom:6px}
+  .intro h1 .tag{font-size:11px;background:rgba(255,255,255,.2);padding:3px 8px;border-radius:4px;font-weight:600;margin-left:8px;vertical-align:middle}
+  .intro p{font-size:13px;opacity:.95;margin-bottom:6px}
+  .intro .meta{display:flex;gap:16px;font-size:12px;margin-top:14px;flex-wrap:wrap;border-top:1px solid rgba(255,255,255,.2);padding-top:14px}
+
+  .legend{background:#fff;border:1px solid var(--gray-3);border-radius:8px;padding:12px 18px;margin-bottom:18px;display:flex;align-items:center;gap:18px;font-size:12px;flex-wrap:wrap}
+  .legend .item{display:flex;align-items:center;gap:6px}
+  .legend .swatch-new{width:26px;height:14px;outline:2px dashed var(--red);outline-offset:1px;border-radius:2px;background:#fff}
+  .legend .swatch-keep{width:26px;height:14px;border:1px solid var(--gray-3);border-radius:2px;background:#fff}
+  .legend .tag-review-mini{background:var(--amber-soft);color:var(--amber);border:1px solid #fcd34d;border-radius:3px;padding:1px 6px;font-size:9px;font-weight:700}
+  .legend b{color:var(--red)}
+
+  .tag-review{background:var(--amber-soft);color:var(--amber);border:1px solid #fcd34d;border-radius:3px;padding:1px 6px;font-size:9px;font-weight:700;display:inline-block;vertical-align:middle}
+  .review-note{background:var(--amber-soft);border:1px dashed var(--amber);border-radius:4px;padding:6px 10px;font-size:10px;color:#92400e;margin-top:6px}
+  .review-note b{color:#78350f}
+
+  .screen-section{margin-bottom:32px}
+  .screen-section .head{background:linear-gradient(135deg,#1e3a8a,#3730a3);color:#fff;padding:14px 20px;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center}
+  .screen-section .head .num{background:rgba(255,255,255,.2);padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700;letter-spacing:1px}
+  .screen-section .head h2{font-size:16px;font-weight:700;display:inline-block;margin-left:8px}
+  .screen-section .head .meta{font-size:12px;opacity:.85}
+  .screen-body{background:#fff;border:1px solid var(--gray-3);border-top:none;border-radius:0 0 8px 8px;padding:18px}
+  .single-side{border:1px solid var(--gray-3);border-radius:6px;background:#fff;overflow:hidden}
+
+  .change-highlight{position:relative;outline:2px dashed var(--red);outline-offset:2px;border-radius:3px}
+  .change-highlight::before{content:attr(data-label);position:absolute;top:-10px;left:8px;background:var(--red);color:#fff;font-size:9px;font-weight:700;padding:2px 8px;border-radius:3px;z-index:10}
+
+  .change-explain{background:#fef2f2;border-left:3px solid var(--red);padding:12px 16px;margin-top:14px;font-size:12px}
+  .change-explain h4{color:#991b1b;font-weight:700;font-size:13px;margin-bottom:6px}
+  .change-explain ul{margin:6px 0 0 18px;color:#7f1d1d}
+  .change-explain li{margin:3px 0}
+  .change-explain b{color:#7f1d1d}
+
+  .admin-screen{background:#fff;font-size:12px}
+  .detail-header{padding:12px 18px;display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid var(--gray-2)}
+  .detail-header .left{display:flex;align-items:center;gap:6px}
+  .btn-back{border:1px solid var(--gray-3);background:#fff;padding:4px 10px;border-radius:3px;font-size:11px}
+  .pill-order{background:var(--blue);color:#fff;padding:4px 10px;border-radius:3px;font-size:11px;font-weight:600}
+
+  .btn{border:1px solid var(--gray-3);background:#fff;color:var(--ink);padding:4px 12px;border-radius:3px;font-size:11px;cursor:pointer;font-weight:500}
+  .btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .btn.blue{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .btn.red{background:var(--red);color:#fff;border-color:var(--red)}
+  .btn.ghost{background:#fff;color:var(--gray-5);border-color:var(--gray-3)}
+  .btn.small{padding:3px 8px;font-size:10px}
+
+  .sg-chip{padding:1px 6px;border-radius:8px;font-size:9px;font-weight:600;border:1px solid;display:inline-block}
+  .sg-chip.domestic{background:#fef3c7;color:#92400e;border-color:#fcd34d}
+  .sg-chip.korea{background:#dbeafe;color:#1e40af;border-color:#93c5fd}
+  .sg-chip.normal{background:#d1fae5;color:#065f46;border-color:#6ee7b7}
+  .combo-badge{background:var(--purple);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:2px}
+
+  /* 합주문 요약 바 */
+  .combo-summary{display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:#faf5ff;border:1px solid #e9d5ff;border-radius:6px;padding:10px 14px;font-size:11px}
+  .combo-summary .blk{display:flex;flex-direction:column;gap:2px}
+  .combo-summary .blk .k{font-size:9px;color:var(--gray-6)}
+  .combo-summary .blk .v{font-size:13px;font-weight:700;color:var(--purple)}
+  .combo-summary .divider{width:1px;height:26px;background:#e9d5ff}
+  .combo-summary .types{display:flex;gap:6px;flex-wrap:wrap}
+
+  .detail-grid{display:grid;grid-template-columns:1fr 250px;gap:12px;padding:12px 18px}
+
+  /* SG 카드 */
+  .sg-card-v7{border:2px solid var(--gray-3);border-radius:6px;margin-bottom:12px;overflow:hidden;background:#fff}
+  .sg-card-v7.korea{border-color:#93c5fd}
+  .sg-card-v7.normal{border-color:#6ee7b7}
+  .sg-card-v7.domestic{border-color:#fcd34d}
+  .sg-card-head-v7{padding:8px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--gray-2);font-size:11px}
+  .sg-card-head-v7.korea{background:#eff6ff}
+  .sg-card-head-v7.normal{background:#ecfdf5}
+  .sg-card-head-v7.domestic{background:#fffbeb}
+  .sg-head-left-v7{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .sg-head-left-v7 .title{font-size:11px;font-weight:700}
+  .sg-head-left-v7 .meta{font-size:10px;color:var(--gray-6)}
+  .sg-status-badge{font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px}
+  .sg-status-badge.delivered{background:var(--blue);color:#fff}
+  .sg-status-badge.shipping{background:var(--green);color:#fff}
+  .sg-status-badge.partial{background:var(--orange);color:#fff}
+  .sg-status-badge.ready{background:var(--gray-3);color:var(--gray-7)}
+
+  .sg-amount-line{display:flex;gap:0;border-bottom:1px solid var(--gray-2);background:#fff;font-size:10px;flex-wrap:wrap}
+  .sg-amount-line .cell{flex:1;min-width:90px;padding:6px 10px;border-right:1px solid var(--gray-2)}
+  .sg-amount-line .cell:last-child{border-right:none}
+  .sg-amount-line .cell .k{color:var(--gray-6);font-size:9px;display:block}
+  .sg-amount-line .cell .v{font-weight:700;font-size:11px}
+  .sg-amount-line .cell .v.free{color:var(--green)}
+
+  /* 품목 테이블 (실제 어드민 구조 반영) */
+  table.detail-table{width:100%;border-collapse:collapse;font-size:11px}
+  table.detail-table th{background:#fafbfc;padding:7px 10px;text-align:left;color:var(--gray-7);font-weight:600;font-size:10px;border-bottom:1px solid var(--gray-3)}
+  table.detail-table td{padding:10px;border-bottom:1px solid var(--gray-2);vertical-align:top;font-size:11px}
+  table.detail-table tr.dim{background:var(--gray-1)}
+  .col-ship{width:150px}
+  .col-prod{}
+  .col-state{width:130px}
+  .col-shop{width:70px}
+  .col-price{width:80px;text-align:right}
+  .col-disc{width:80px;text-align:right}
+
+  /* 배송정보 셀 (실제 어드민: 묶음코드 + 배송사 + 송장 + 추적/완료/삭제) */
+  .ship-block{font-size:10px}
+  .ship-block .group-code{font-weight:600;color:var(--gray-7);font-size:10px;margin-bottom:4px}
+  .ship-pills{display:flex;gap:4px;flex-wrap:wrap;align-items:center;margin-bottom:3px}
+  .pill-gray{background:var(--gray-2);border-radius:8px;padding:1px 6px;font-size:9px}
+  .pill-track{border:1px solid var(--gray-3);background:#fff;border-radius:3px;padding:1px 6px;font-size:9px}
+  .pill-check{border:1px solid var(--green);color:var(--green);background:#fff;border-radius:3px;padding:1px 6px;font-size:9px}
+  .pill-del{border:1px solid var(--red);color:var(--red);background:#fff;border-radius:3px;padding:1px 6px;font-size:9px}
+
+  /* 상품정보 셀 */
+  .prod-cell{display:flex;gap:8px}
+  .prod-cell .thumb{width:40px;height:50px;background:var(--gray-2);border-radius:3px;flex-shrink:0}
+  .prod-cell .meta .ordno{font-weight:700;font-size:11px}
+  .prod-cell .meta .name{font-size:10px;color:var(--ink);margin:2px 0}
+  .prod-cell .meta .jp-link{font-size:10px;color:var(--blue);text-decoration:underline;cursor:pointer;display:block;margin-bottom:2px}
+  .prod-cell .meta .exch-from{font-size:9px;color:var(--gray-5)}
+
+  /* 상품상태 셀 */
+  .state-cell .opt{font-weight:700;font-size:10px}
+  .state-cell .code{font-size:9px;color:var(--gray-6);margin-bottom:4px}
+  .badge-status-mini{font-size:9px;padding:1px 6px;border-radius:3px;font-weight:600;display:inline-block;border:1px solid}
+  .badge-status-mini.delivered{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .badge-status-mini.shipping{background:var(--green);color:#fff;border-color:var(--green)}
+  .badge-status-mini.ready{background:var(--gray-2);color:var(--gray-7);border-color:var(--gray-3)}
+  .badge-status-mini.cancel{background:#fff;border-color:var(--red);color:var(--red)}
+  .badge-status-mini.exch-done{background:#fff;border-color:var(--red);color:var(--red)}
+  .badge-status-mini.exch-cancel{background:#fff;border-color:var(--red);color:var(--red)}
+  .badge-status-mini.return-done{background:#fff;border-color:var(--red);color:var(--red)}
+
+  /* 가격/할인 */
+  .price-cell{text-align:right;font-size:11px}
+  .disc-cell{text-align:right;font-size:11px}
+  .strike{text-decoration:line-through;color:var(--gray-5);font-size:10px}
+  .final{font-weight:700}
+
+  /* SG 카드 하단 액션 */
+  .sg-actions{padding:8px 12px;border-top:1px solid var(--gray-2);background:#fafbfc;display:flex;gap:4px;flex-wrap:wrap}
+
+  /* 결제 요약 (세분화) */
+  .pay-summary{border:1px solid var(--gray-3);font-size:11px;background:#fff;margin-top:6px;overflow:hidden;width:100%;border-collapse:collapse}
+  .pay-summary thead th{background:#fafbfc;padding:6px 10px;font-size:10px;color:var(--gray-7);font-weight:600;text-align:right;border-bottom:1px solid var(--gray-2)}
+  .pay-summary thead th:first-child{text-align:left}
+  .pay-summary thead th.col-current{color:var(--blue)}
+  .pay-summary td{padding:6px 10px;font-size:11px;border-bottom:1px solid var(--gray-2)}
+  .pay-summary td.amount{text-align:right;font-weight:600}
+  .pay-summary td.k{color:var(--gray-7)}
+  .pay-summary tr.group-head td{background:#f9fafb;font-weight:700;font-size:10px;color:var(--gray-6);padding:5px 10px}
+  .pay-summary tr.tot td{border-top:2px solid var(--gray-3);background:#eff6ff;font-weight:700}
+  .pay-summary tr.tot td.amount{color:var(--blue);font-size:13px}
+  .pay-summary tr.refund-row td{background:#fef2f2}
+  .pay-summary tr.refund-row td.amount{color:var(--red);font-weight:700}
+  .pay-summary tr.sub td{padding-left:24px;color:var(--gray-6);font-size:10px}
+  .pay-summary tr.sub td.amount{font-size:10px}
+  .pay-summary tr.coupon-code td{font-size:10px;color:var(--gray-5)}
+
+  /* 주문 단위 액션 바 */
+  .order-action-bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:10px 12px;background:#f9fafb;border:1px solid var(--gray-3);border-radius:6px;margin-bottom:10px}
+  .order-action-bar .label{font-size:10px;font-weight:700;color:var(--gray-6);margin-right:4px}
+
+  /* 우측 사이드 */
+  .side-card{background:#fff;border:1px solid var(--gray-3);border-radius:3px;margin-bottom:8px}
+  .side-card .head{padding:8px 10px;font-size:11px;font-weight:700;border-bottom:1px solid var(--gray-2)}
+  .side-card .body{padding:8px 10px;font-size:10px}
+  .side-card .row{display:flex;justify-content:space-between;padding:2px 0}
+  .side-card .row .l{color:var(--gray-6)}
+  .side-card .row .red{color:var(--red)}
+
+  /* 클레임 이력 */
+  .claim-history{border:1px solid var(--gray-3);border-radius:6px;margin-top:14px}
+  .claim-history .h{padding:10px 14px;font-weight:700;font-size:12px;border-bottom:1px solid var(--gray-2);background:#fafbfc}
+  table.claim-table{width:100%;border-collapse:collapse;font-size:10px}
+  table.claim-table th{background:#fff;padding:7px 10px;text-align:left;color:var(--gray-6);font-weight:600;font-size:9px;border-bottom:1px solid var(--gray-2)}
+  table.claim-table td{padding:8px 10px;border-bottom:1px solid var(--gray-2);font-size:10px}
+  .btn-detail{background:#1f2937;color:#fff;border:none;border-radius:3px;padding:2px 8px;font-size:9px;cursor:pointer}
+
+  .summary-section{background:#fff;border:2px solid var(--purple);border-radius:8px;padding:18px 22px;margin-bottom:20px}
+  .summary-section h2{font-size:15px;font-weight:700;color:var(--purple);margin-bottom:14px}
+  .summary-section table{width:100%;border-collapse:collapse;font-size:12px}
+  .summary-section th{background:#faf5ff;padding:10px 12px;text-align:left;color:var(--purple);font-weight:700;border-bottom:1px solid #e9d5ff;font-size:11px}
+  .summary-section td{padding:10px 12px;border-bottom:1px solid var(--gray-2)}
+  .summary-section td.area{font-weight:700}
+  .summary-section td.minimal{color:var(--green);font-weight:600}
+
+  .openissue-section{background:#fff;border:2px solid var(--amber);border-radius:8px;padding:18px 22px;margin-bottom:24px}
+  .openissue-section h2{font-size:15px;font-weight:700;color:var(--amber);margin-bottom:6px}
+  .openissue-section .sub{font-size:11px;color:var(--gray-6);margin-bottom:14px}
+  .openissue-section table{width:100%;border-collapse:collapse;font-size:11px}
+  .openissue-section th{background:var(--amber-soft);padding:9px 11px;text-align:left;color:#92400e;font-weight:700;border-bottom:1px solid #fcd34d;font-size:10px}
+  .openissue-section td{padding:9px 11px;border-bottom:1px solid var(--gray-2);font-size:11px;vertical-align:top}
+  .openissue-section td.id{font-weight:700;color:var(--amber);white-space:nowrap}
+  .owner-pill{font-size:9px;font-weight:700;padding:1px 6px;border-radius:8px;background:var(--gray-2);color:var(--gray-7)}
+  .owner-pill.cx{background:#dbeafe;color:#1e40af}
+  .owner-pill.logi{background:#d1fae5;color:#065f46}
+  .owner-pill.dev{background:#ede9fe;color:#5b21b6}
+  .owner-pill.plan{background:#fef3c7;color:#92400e}
+  .blk-pill{font-size:9px;font-weight:700;padding:1px 6px;border-radius:3px}
+  .blk-pill.hard{background:var(--red-soft);color:var(--red)}
+  .blk-pill.soft{background:var(--amber-soft);color:var(--amber)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="intro">
+  <h1>합주문 BO 와이어프레임 v7.3 <span class="tag">실제 어드민 정보구조 반영</span></h1>
+  <p>실제 nugu Admin 주문상세의 <b>배송정보 / 상품정보 / 상품상태 / 할인내역</b> 구조를 그대로 살리고, 합주문(SG)만 얹은 협의용 초안입니다.</p>
+  <p>빨간 점선 = 합주문 신규 / <span class="tag-review">검토 필요</span> = 정책 미확정. 숫자는 예시.</p>
+  <div class="meta">
+    <div>📅 <b>작성일</b> 2026-06-02</div>
+    <div>📋 <b>화면</b> 주문상세 (합주문)</div>
+    <div>🎯 <b>용도</b> CX / 물류 / 개발 협의용</div>
+  </div>
+</div>
+
+<div class="legend">
+  <div class="item"><span class="swatch-new"></span> <b>빨간 점선 = 합주문용 신규/변경</b></div>
+  <div class="item"><span class="swatch-keep"></span> 점선 없음 = 기존 어드민 유지</div>
+  <div class="item"><span class="tag-review-mini">검토 필요</span> = 정책 미확정</div>
+</div>
+
+<div class="summary-section">
+  <h2>📌 v7.3 변경 — 실제 어드민 정보 누락 보완</h2>
+  <table>
+    <thead><tr><th style="width:22%">영역</th><th style="width:39%">v7.2 (누락/오류)</th><th style="width:39%">v7.3 (실제 어드민 반영)</th></tr></thead>
+    <tbody>
+      <tr><td class="area">배송정보</td><td>품목별 송장 입력칸을 테이블에 넣음(오류)</td><td class="minimal">배송묶음코드 + 배송사 + 송장 + [배송추적][완료][삭제]. <b>입력은 하단 [송장입력] 버튼</b></td></tr>
+      <tr><td class="area">상품정보</td><td>주문번호 + 상품명만</td><td class="minimal">썸네일 / 주문번호 / 영문명·코드 / 일본어명 링크 / 품목코드 / 교환생성렉 ←원주문</td></tr>
+      <tr><td class="area">상품상태</td><td>상태 배지만</td><td class="minimal">옵션(컬러/사이즈) + 품목코드 + 케이스별 상태배지</td></tr>
+      <tr><td class="area">할인내역</td><td>단일 금액</td><td class="minimal">취소선 원가 + 최종가 (실제 어드민 동일)</td></tr>
+      <tr><td class="area">결제 요약</td><td>구조만</td><td class="minimal">상품금액/쿠폰할인(SG안분)/배송비(유형별)/수수료/합계/결제/환불/포인트/쿠폰코드</td></tr>
+      <tr><td class="area">처리 단위</td><td>SG 단위만</td><td class="minimal"><b>전체(주문 단위) + SG 단위</b> 2단 처리 — 회의록 "최종 결제는 한번에" 반영</td></tr>
+    </tbody>
+  </table>
+</div>
+
+
+<!-- ============================================================
+     주문상세 (합주문)
+============================================================ -->
+<div class="screen-section">
+  <div class="head">
+    <div><span class="num">주문상세</span><h2>합주문 — SG 카드 + 전체/SG 2단 처리</h2></div>
+    <span class="meta">실제 어드민 정보 구조 + 합주문 SG 그룹핑</span>
+  </div>
+
+  <div class="screen-body">
+    <div class="single-side">
+      <div class="admin-screen">
+        <div class="detail-header">
+          <div class="left">
+            <button class="btn-back">목록</button>
+            <span class="pill-order">📋 260527-B7594CEB4</span>
+            <span class="combo-badge">합주문</span>
+          </div>
+          <div style="font-size:10px;color:var(--gray-6);text-align:right">주문일시: 2026.05.27 11:35<br>생성일시: 2026.05.27 11:35</div>
+        </div>
+
+        <!-- 합주문 요약 바 (신규) -->
+        <div style="padding:12px 18px 0">
+          <div class="change-highlight" data-label="추가: 합주문 요약">
+            <div class="combo-summary">
+              <div class="blk"><span class="k">총 SG</span><span class="v">2건</span></div>
+              <div class="divider"></div>
+              <div class="blk"><span class="k">총 품목</span><span class="v">5개</span></div>
+              <div class="divider"></div>
+              <div class="blk">
+                <span class="k">배송유형별</span>
+                <span class="types">
+                  <span class="sg-chip korea">즉일발송(한국) 1</span>
+                  <span class="sg-chip normal">일반배송 1</span>
+                  <span class="sg-chip domestic" style="opacity:.4">즉일발송(국내) 0</span>
+                </span>
+              </div>
+              <div class="divider"></div>
+              <div class="blk"><span class="k">결제</span><span class="v" style="color:var(--ink)">1건 (페이페이)</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="detail-grid">
+          <div>
+            <!-- 전체(주문 단위) 액션 바 (신규) -->
+            <div class="change-highlight" data-label="추가: 전체(주문 단위) 처리" style="margin-bottom:12px">
+              <div class="order-action-bar">
+                <span class="label">전체 처리</span>
+                <button class="btn small">전체 송장 동기화</button>
+                <button class="btn small">전체 상태변경</button>
+                <button class="btn red small">전체 주문취소</button>
+                <button class="btn red small">최종 결제취소 / 환불 확정 <span class="tag-review">검토 필요</span></button>
+                <button class="btn ghost small">셀메이트에서 보기</button>
+              </div>
+              <div class="review-note">
+                <b>회의록 반영</b> — 운영은 SG별로 처리(아래 각 카드)하되, 결제는 주문 단위로 한 번에 취소/환불 확정. 단 페이페이가 SG별 <b>부분 환불</b>을 지원하는지는 개발 확인 필요(O3). 미지원 시 "최종 결제취소"는 전체 환불만 가능.
+              </div>
+            </div>
+
+            <!-- SG 카드 묶음 -->
+            <div class="change-highlight" data-label="변경: 배송유형(SG)별 카드 묶음">
+
+              <!-- SG-001 : 즉일발송(한국) -->
+              <div class="sg-card-v7 korea">
+                <div class="sg-card-head-v7 korea">
+                  <div class="sg-head-left-v7">
+                    <span class="sg-chip korea">즉일발송(한국)</span>
+                    <span class="title">SG-001</span>
+                    <span class="meta">묶음 Z-260527-B7594CEB4-00 · 창고 MIR</span>
+                  </div>
+                  <span class="sg-status-badge partial">부분 처리 (교환완료 포함)</span>
+                </div>
+                <div class="sg-amount-line">
+                  <div class="cell"><span class="k">상품금액</span><span class="v">¥11,580</span></div>
+                  <div class="cell"><span class="k">배송비</span><span class="v">¥0</span></div>
+                  <div class="cell"><span class="k">무료배송 <span class="tag-review">검토 필요</span></span><span class="v free">해당 (할인 후 ≥ ¥6,000)</span></div>
+                </div>
+
+                <table class="detail-table">
+                  <thead>
+                    <tr>
+                      <th class="col-ship">배송정보</th>
+                      <th class="col-prod">상품정보</th>
+                      <th class="col-state">상품상태</th>
+                      <th class="col-shop">샵명</th>
+                      <th class="col-price">가격·수량</th>
+                      <th class="col-disc">할인내역</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td class="col-ship">
+                        <div class="ship-block">
+                          <div class="group-code">Z-260527-B7594CEB4-00</div>
+                          <div class="ship-pills"><span class="pill-gray">배송사 SHIPNERGY</span><span class="pill-gray">123213</span></div>
+                          <div class="ship-pills"><span class="pill-track">배송추적</span><span class="pill-del">삭제 ×</span></div>
+                        </div>
+                      </td>
+                      <td class="col-prod">
+                        <div class="prod-cell">
+                          <div class="thumb"></div>
+                          <div class="meta">
+                            <div class="ordno">260527-B7594CEB4-0</div>
+                            <div class="name">Straight semi-wide daily denim pants-TGMQQC7655</div>
+                            <span class="jp-link">[選べる着丈] ウエスト回りスッキリ！…デニムパンツ</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="col-state">
+                        <div class="state-cell">
+                          <div class="opt">vintage blue / l / basic</div>
+                          <div class="code">품목: TGMQQC7655000W</div>
+                          <span class="badge-status-mini delivered">배송완료</span>
+                        </div>
+                      </td>
+                      <td class="col-shop">bokplace</td>
+                      <td class="col-price"><div class="price-cell">¥3,860 × 2<br><span class="final">¥7,720</span></div></td>
+                      <td class="col-disc"><div class="disc-cell"><span class="final">¥7,720</span></div></td>
+                    </tr>
+                    <tr class="dim">
+                      <td class="col-ship"></td>
+                      <td class="col-prod">
+                        <div class="prod-cell">
+                          <div class="thumb"></div>
+                          <div class="meta">
+                            <div class="ordno">260527-B7594CEB4-3</div>
+                            <div class="name">Straight semi-wide daily denim pants-TGMQQC7655</div>
+                            <span class="jp-link">[選べる着丈] ウエスト回りスッキリ！…デニムパンツ</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="col-state">
+                        <div class="state-cell">
+                          <div class="opt">vintage blue / l / basic</div>
+                          <div class="code">품목: TGMQQC7655000W</div>
+                          <span class="badge-status-mini exch-done">교환완료</span>
+                        </div>
+                      </td>
+                      <td class="col-shop">bokplace</td>
+                      <td class="col-price"><div class="price-cell"><span class="strike">¥3,860 × 1</span></div></td>
+                      <td class="col-disc"><div class="disc-cell"><span class="strike">¥3,860</span><br><span class="final">¥3,860</span></div></td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <div class="sg-actions">
+                  <button class="btn red small">송장입력</button>
+                  <button class="btn small">송장 동기화</button>
+                  <button class="btn small">상태변경</button>
+                  <button class="btn primary small">교환</button>
+                  <button class="btn primary small">부분취소</button>
+                  <button class="btn red small">부분반품</button>
+                </div>
+              </div>
+
+              <!-- SG-002 : 일반배송 -->
+              <div class="sg-card-v7 normal">
+                <div class="sg-card-head-v7 normal">
+                  <div class="sg-head-left-v7">
+                    <span class="sg-chip normal">일반배송</span>
+                    <span class="title">SG-002</span>
+                    <span class="meta">묶음 Z-260527-B7594CEB4-01 · 브랜드 직배송</span>
+                  </div>
+                  <span class="sg-status-badge shipping">배송중 / 일부 취소·철회</span>
+                </div>
+                <div class="sg-amount-line">
+                  <div class="cell"><span class="k">상품금액</span><span class="v">¥3,860</span></div>
+                  <div class="cell"><span class="k">배송비</span><span class="v">¥550</span></div>
+                  <div class="cell"><span class="k">무료배송 <span class="tag-review">검토 필요</span></span><span class="v">미해당 (¥6,000 미만)</span></div>
+                </div>
+
+                <!-- 일반배송 = 송장 여러 개 가능 (배송정보 셀에 묶음 여러 줄) -->
+                <table class="detail-table">
+                  <thead>
+                    <tr>
+                      <th class="col-ship">배송정보 <span class="tag-review">다중 송장</span></th>
+                      <th class="col-prod">상품정보</th>
+                      <th class="col-state">상품상태</th>
+                      <th class="col-shop">샵명</th>
+                      <th class="col-price">가격·수량</th>
+                      <th class="col-disc">할인내역</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td class="col-ship">
+                        <div class="ship-block">
+                          <div class="group-code">Z-260527-B7594CEB4-01</div>
+                          <div class="ship-pills"><span class="pill-gray">배송사 佐川急便</span><span class="pill-gray">121212</span></div>
+                          <div class="ship-pills"><span class="pill-track">배송추적</span><span class="pill-check">완료 ✓</span><span class="pill-del">삭제 ×</span></div>
+                        </div>
+                      </td>
+                      <td class="col-prod">
+                        <div class="prod-cell">
+                          <div class="thumb"></div>
+                          <div class="meta">
+                            <div class="ordno">260527-B7594CEB4-4</div>
+                            <div class="name">Straight semi-wide daily denim pants-TGMQQC7655</div>
+                            <div class="exch-from">← 260527-B7594CEB4-3</div>
+                            <span class="jp-link">[選べる着丈] ウエスト回りスッキリ！…デニムパンツ</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="col-state">
+                        <div class="state-cell">
+                          <div class="opt">vintage blue / m / long</div>
+                          <div class="code">품목: TGMQQC7655000U</div>
+                          <span class="badge-status-mini shipping">배송중</span>
+                        </div>
+                      </td>
+                      <td class="col-shop">bokplace</td>
+                      <td class="col-price"><div class="price-cell">¥3,860 × 1<br><span class="final">¥3,860</span></div></td>
+                      <td class="col-disc"><div class="disc-cell"><span class="final">¥3,860</span></div></td>
+                    </tr>
+                    <tr class="dim">
+                      <td class="col-ship">
+                        <div class="review-note" style="margin:0">
+                          <b>검토 필요(O4)</b> — 일반배송은 품목이 다른 날·다른 송장으로 나갈 수 있어 한 SG에 <b>배송묶음(송장)이 여러 개</b> 생길 수 있음. 그 경우 배송정보 셀이 송장별로 분리됨. 셀메이트 송장 단위·BO 표시 방식 물류/개발 확인.
+                        </div>
+                      </td>
+                      <td class="col-prod">
+                        <div class="prod-cell">
+                          <div class="thumb"></div>
+                          <div class="meta">
+                            <div class="ordno">260527-B7594CEB4-1</div>
+                            <div class="name">(ORIGINAL) loose-fit denim pants (purple)-JMFWBZ8793</div>
+                            <span class="jp-link">(ORIGINAL) ルーズフィットデニムパンツ (purple)</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="col-state">
+                        <div class="state-cell">
+                          <div class="opt">purple / s</div>
+                          <div class="code">품목: JMFWBZ8793000A</div>
+                          <span class="badge-status-mini cancel">취소완료</span>
+                        </div>
+                      </td>
+                      <td class="col-shop">hoop</td>
+                      <td class="col-price"><div class="price-cell"><span class="strike">¥7,000 × 1</span></div></td>
+                      <td class="col-disc"><div class="disc-cell"><span class="strike">¥7,000</span><br><span class="final">¥7,000</span></div></td>
+                    </tr>
+                    <tr>
+                      <td class="col-ship"></td>
+                      <td class="col-prod">
+                        <div class="prod-cell">
+                          <div class="thumb"></div>
+                          <div class="meta">
+                            <div class="ordno">260527-B7594CEB4-2</div>
+                            <div class="name">(ORIGINAL) loose-fit denim pants (purple)-JMFWBZ8793</div>
+                            <div class="exch-from">← 260527-B7594CEB4-1</div>
+                            <span class="jp-link">(ORIGINAL) ルーズフィットデニムパンツ (purple)</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="col-state">
+                        <div class="state-cell">
+                          <div class="opt">purple / s</div>
+                          <div class="code">품목: JMFWBZ8793000A</div>
+                          <span class="badge-status-mini exch-cancel">교환철회</span>
+                        </div>
+                      </td>
+                      <td class="col-shop">hoop</td>
+                      <td class="col-price"><div class="price-cell">¥7,000 × 1<br><span class="final">¥7,000</span></div></td>
+                      <td class="col-disc"><div class="disc-cell"><span class="final">¥7,000</span></div></td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <div class="sg-actions">
+                  <button class="btn red small">송장입력</button>
+                  <button class="btn small">송장 동기화</button>
+                  <button class="btn small">상태변경</button>
+                  <button class="btn primary small">교환</button>
+                  <button class="btn primary small">부분취소</button>
+                  <button class="btn red small">부분반품</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 결제 요약 (세분화) -->
+            <div class="change-highlight" data-label="변경: 결제 요약 세분화" style="margin-top:16px">
+              <table class="pay-summary">
+                <thead>
+                  <tr><th>항목 / 항목</th><th>원래 결제</th><th class="col-current">환불 후 잔액</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td class="k">상품구입금액 합계</td><td class="amount" style="color:var(--red)">¥18,580</td><td class="amount" style="color:var(--red)">¥11,580</td></tr>
+
+                  <tr class="group-head"><td colspan="3">쿠폰 할인액 <span class="tag-review">검토 필요</span></td></tr>
+                  <tr><td class="k">쿠폰 할인액 (주문 단위 → 품목 안분)</td><td class="amount">- ¥600</td><td class="amount">- ¥400</td></tr>
+                  <tr class="sub"><td>└ SG-001 안분</td><td class="amount">- ¥360</td><td class="amount">- ¥240</td></tr>
+                  <tr class="sub"><td>└ SG-002 안분</td><td class="amount">- ¥240</td><td class="amount">- ¥160</td></tr>
+
+                  <tr class="group-head"><td colspan="3">배송비 (SG별 청구)</td></tr>
+                  <tr><td class="k">배송비 합계</td><td class="amount">¥550</td><td class="amount">¥550</td></tr>
+                  <tr class="sub"><td>└ 즉일발송(한국) SG-001</td><td class="amount">¥0 <span class="tag-review">무료배송 ✓</span></td><td class="amount">¥0</td></tr>
+                  <tr class="sub"><td>└ 일반배송 SG-002</td><td class="amount">¥550</td><td class="amount">¥550</td></tr>
+                  <tr><td class="k">배송비쿠폰 <span class="tag-review">검토 필요</span></td><td class="amount">¥0</td><td class="amount">¥0</td></tr>
+
+                  <tr><td class="k">페이페이결제 수수료 합계</td><td class="amount">¥0</td><td class="amount">¥0</td></tr>
+
+                  <tr class="tot"><td>합계 금액</td><td class="amount">¥18,580</td><td class="amount">¥11,580</td></tr>
+                  <tr class="tot"><td>결제 금액</td><td class="amount">¥18,580</td><td class="amount">¥11,580</td></tr>
+
+                  <tr class="refund-row"><td><b>환불 결제금액</b></td><td class="amount"></td><td class="amount">¥7,000</td></tr>
+                  <tr class="sub"><td>└ SG-002 부분취소 (일반)</td><td class="amount"></td><td class="amount">¥7,000</td></tr>
+
+                  <tr><td class="k">포인트 적립</td><td class="amount">+ 185</td><td class="amount">+ 115</td></tr>
+                  <tr class="coupon-code"><td>쿠폰 코드</td><td colspan="2" style="text-align:right">dd09099c264414aaca63f0d847ca1e7</td></tr>
+                </tbody>
+              </table>
+              <div class="review-note">
+                <b>검토 필요</b> — 쿠폰 안분/배송비쿠폰/무료배송 판정은 미확정 항목 연결:
+                ① "할인 3종" 정의(기획 confirm 대기), ② 복수 배송비쿠폰 동시사용(개발 hard block), ③ 페이페이 부분환불 지원(개발). 위 숫자는 구조 예시이며 확정값 아님.
+              </div>
+            </div>
+
+            <!-- 클레임 이력 (실제 어드민 유지) -->
+            <div class="claim-history">
+              <div class="h">취소 / 교환 / 반품 상세 <span style="font-size:9px;color:var(--gray-5);font-weight:400">(기존 어드민 유지 · SG 컬럼만 추가 검토)</span></div>
+              <table class="claim-table">
+                <thead><tr><th>코드</th><th>SG <span class="tag-review">검토</span></th><th>종류</th><th>사유</th><th>처리</th><th>상태</th><th>작업자</th><th>셀메이트</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td>260527-B7594CEB4-CANCEL-1</td>
+                    <td>SG-002</td>
+                    <td>주문취소</td>
+                    <td>배송지연</td>
+                    <td><button class="btn-detail">상세 ></button></td>
+                    <td>환불완료 ¥7,000<br>2026-05-27 11:40</td>
+                    <td>OhSeungMin</td>
+                    <td>취소 실패</td>
+                  </tr>
+                  <tr>
+                    <td>260527-B7594CEB4-EXCHANGE-2</td>
+                    <td>SG-001</td>
+                    <td>교환</td>
+                    <td>오배송</td>
+                    <td><button class="btn-detail">상세 ></button></td>
+                    <td>교환 완료</td>
+                    <td>OhSeungMin</td>
+                    <td>-</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+
+          <!-- 우측 사이드 (실제 어드민 동일) -->
+          <div>
+            <div class="side-card">
+              <div class="head">회원 정보</div>
+              <div class="body">
+                <div class="row"><span class="l">이름</span><span style="color:var(--blue)">오 승민</span></div>
+                <div class="row"><span class="l">회원등급</span><span>NEW</span></div>
+                <div class="row"><span class="l">회원상태</span><span>정상(차단해제)</span></div>
+                <div class="row"><span class="l">가입일</span><span>2025.12.29</span></div>
+                <div class="row"><span class="l">주문 횟수</span><span>총 8회</span></div>
+                <div class="row"><span class="l">적립금</span><span class="red">¥300 (+¥300)</span></div>
+                <div class="row"><span class="l">예치금</span><span>¥0</span></div>
+              </div>
+            </div>
+            <div class="side-card">
+              <div class="head">주문자 정보</div>
+              <div class="body">
+                <div class="row"><span class="l">이름</span><span>Oh SeungMin</span></div>
+                <div class="row"><span class="l">이메일</span><span>steven.oh@nugu.jp</span></div>
+                <div class="row"><span class="l">전화번호</span><span>+821048172814</span></div>
+                <div style="margin-top:6px"><button class="btn primary small">✉ 주문메일 재발송</button></div>
+              </div>
+            </div>
+            <div class="side-card">
+              <div class="head">배송지</div>
+              <div class="body">
+                <div>京都府 福知山市 6200000</div>
+                <div class="row" style="margin-top:4px"><span class="l">수취인</span><span>Oh SeungMin</span></div>
+                <div class="row"><span class="l">영문명</span><span>Oh SeungMin</span></div>
+                <div class="row"><span class="l">배송메시지</span><span>없음</span></div>
+                <div style="margin-top:6px"><button class="btn small">✏ 배송지 수정</button></div>
+              </div>
+            </div>
+            <div class="side-card">
+              <div class="head">결제 정보</div>
+              <div class="body">
+                <div class="row"><span class="l">결제일시</span><span>2026.05.27 11:35</span></div>
+                <div class="row"><span class="l">결제업체</span><span>gmo</span></div>
+                <div class="row"><span class="l">결제상태</span><span>결제완료</span></div>
+                <div class="row"><span class="l">결제수단</span><span>페이페이</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="change-explain">
+      <h4>🔴 v7.3 핵심</h4>
+      <ul>
+        <li><b>배송정보</b>: 실제 어드민처럼 배송묶음코드 + 배송사 + 송장번호 + [배송추적][완료✓][삭제×]. <b>송장번호 입력은 테이블이 아니라 하단 [송장입력] 버튼</b>에서 처리(테이블에서 입력칸 제거).</li>
+        <li><b>상품정보 / 상품상태 / 할인내역</b>: 썸네일·영문명·코드·일본어 링크·품목코드·옵션·취소선 원가·최종가·교환생성렉(←원주문)까지 실제 어드민 정보 누락 없이 반영. 상태 배지는 배송완료/배송중/취소완료/교환완료/교환철회 등 케이스별.</li>
+        <li><b>전체(주문 단위) + SG 단위 2단 처리</b>: SG 카드 하단에서 SG별 처리(부분취소/반품/교환/송장입력), 상단 전체 바에서 주문 단위 최종 결제취소/환불 확정. 회의록의 "결제는 한번에 취소" 반영. 페이페이 부분환불은 검토 필요.</li>
+        <li><b>결제 요약 세분화</b>: 상품금액 → 쿠폰 할인액(SG 안분 펼침) → 배송비(유형별 분해) → 수수료 → 합계 → 결제 → 환불(SG별) → 포인트 → 쿠폰코드. 미확정 항목은 검토 필요.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+
+<!-- Open Issue -->
+<div class="openissue-section">
+  <h2>⚠️ Open Issue — 협의 / 확정 대상</h2>
+  <div class="sub">화면에 그렸지만 정책 미확정 항목. 이 표가 협의 어젠다이며, 확정 전까지 숫자·동작은 예시입니다.</div>
+  <table>
+    <thead><tr><th style="width:6%">ID</th><th style="width:25%">항목</th><th style="width:13%">주체</th><th style="width:11%">상태</th><th style="width:45%">화면 영향 / 메모</th></tr></thead>
+    <tbody>
+      <tr><td class="id">O1</td><td>"할인 3종" 정의 (무료배송 임계 기준)</td><td><span class="owner-pill plan">기획</span></td><td><span class="blk-pill soft">잠정 lock</span></td><td>혜택+멤버십+상품/주문쿠폰 적용 후 금액으로 임계 판정. SG 카드 "무료배송 여부" 표시값이 여기에 달림.</td></tr>
+      <tr><td class="id">O2</td><td>복수 배송비쿠폰 동시 사용</td><td><span class="owner-pill plan">기획</span> <span class="owner-pill dev">개발</span></td><td><span class="blk-pill hard">hard block</span></td><td>그룹별 배송비쿠폰 동시 적용 여부. 결제 요약 "배송비쿠폰" 라인에 영향.</td></tr>
+      <tr><td class="id">O3</td><td>페이페이 부분 환불 지원 여부</td><td><span class="owner-pill dev">개발</span></td><td><span class="blk-pill soft">확인 대기</span></td><td>SG별 부분 환불 PG 지원 여부 → "최종 결제취소 / 환불 확정" 버튼 동작 결정(전체만 vs 부분 가능).</td></tr>
+      <tr><td class="id">O4</td><td>일반배송 다중 송장 표시 구조</td><td><span class="owner-pill logi">물류</span> <span class="owner-pill dev">개발</span></td><td><span class="blk-pill soft">확인 대기</span></td><td>한 SG에 송장이 여러 개일 때 배송정보 셀 분리 방식. 셀메이트 송장 단위 확인.</td></tr>
+      <tr><td class="id">O5</td><td>클레임 다중 SG 동시 선택 허용</td><td><span class="owner-pill cx">CX</span></td><td><span class="blk-pill soft">확인 대기</span></td><td>회의록상 "하나는 교환·하나는 취소·하나는 반품을 한 요청에" 뉘앙스 → 단일/다중 처리 UI 결정.</td></tr>
+      <tr><td class="id">O6</td><td>합포장 우연 발생 시 배송비 환급</td><td><span class="owner-pill cx">CX</span></td><td><span class="blk-pill soft">정책 대기</span></td><td>일반배송이 즉일과 같은 날 합쳐 나갈 경우 추가 배송비 환급(포인트 등). 환불/포인트 영역 영향.</td></tr>
+      <tr><td class="id">O7</td><td>J브랜드 / 일본 브랜드 반품</td><td><span class="owner-pill cx">CX</span></td><td><span class="blk-pill soft">확인 대기</span></td><td>브랜드별 반송지·국내회수 상이, 담당 MD 공유 후 처리. 반품 흐름·안내 영향.</td></tr>
+      <tr><td class="id">O8</td><td>0엔 결제 / 과한 할인 케이스</td><td><span class="owner-pill dev">개발</span> <span class="owner-pill plan">기획</span></td><td><span class="blk-pill soft">확인 대기</span></td><td>음수 환불 0 처리는 확정. 0엔/과한 할인 시 실결제·환불 계산 추가 확인.</td></tr>
+      <tr><td class="id">O9</td><td>클레임 이력 SG 컬럼 추가</td><td><span class="owner-pill cx">CX</span></td><td><span class="blk-pill soft">확인 대기</span></td><td>취소/교환/반품 상세 표에 SG 컬럼을 넣을지(어느 SG 처리인지 추적). CX 운영 시트 컬럼과 정합 확인.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+</div>
+</body>
+</html>
